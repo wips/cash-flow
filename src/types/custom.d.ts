@@ -1,20 +1,26 @@
-type Transaction = [
-  string,
-  string,
-  string,
-  string,
-  string,
-  number,
-  number,
-  number,
-  string
-];
+type TTransaction = {
+  payDate: string,
+  chargeDate: string,
+  cardNumber: string,
+  type: string,
+  details: string,
+  incomeBalance: number,
+  amountAccountCcy: number,
+  amountTransactionCcy: number,
+  ccy: TCcy,
+  outcomeBalance: number,
+  direction: TDirection,
+  tags: Set<string>,
+};
 
-// interface IStrategyOptions {
-//     usernameField?: string;
-//     passwordField?: string;
-//     passReqToCallback?: boolean;
-// }
+type TCcy = 'UAH' | 'USD' | 'EUR' | 'HUF' | 'GBP';
+type TDirection = 'income' | 'expense' | 'savings';
+
+interface IItemsStorage<T> {
+  add(item: T): void;
+  filter(cb?: (item: T) => boolean): T[];
+}
+
 //
 // interface IStrategyOptionsWithRequest {
 //     usernameField?: string;

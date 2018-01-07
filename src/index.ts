@@ -1,7 +1,8 @@
 import * as csvParse from 'csv-parse';
 import * as fs from 'fs';
 import { resolve } from 'path';
-import storage from './data-source/generic-storage';
+import storage from './data-source/transaction-storage';
+import { toTransaction } from './mappers/transaction';
 
 const ENCODING = 'UTF-8';
 
@@ -10,27 +11,26 @@ main()
 
 async function main() {
   await bootstrap();
-  console.log('Stats: ', gatherStats());
+  console.log('Stats: ', gatherStats(storage.filter()));
+  console.log('Olivka: ', gatherStats(storage.filter(({ tags }) => tags.size > 0)));
 }
 
-function gatherStats() {
+function gatherStats(transactions: TTransaction[]) {
   const stats = {
     income: 0,
     savings: 0,
     expenses: 0,
-    total: 0,
   };
-//
-  return storage.filter()
-    .reduce((acc, transaction: Transaction) => {
-      const amount = transaction[6];
-      if (amount > 0) {
+  return transactions
+    .reduce((acc, transaction: TTransaction) => {
+      const amount = transaction.amountAccountCcy;
+      if (transaction.direction === 'income') {
         acc.income += amount;
-      } else {
+      } else if (transaction.direction === 'expense') {
         acc.expenses += -amount;
+      } else {
+        acc.savings += Math.abs(amount);
       }
-      acc.savings = acc.income - acc.expenses;
-      acc.total += amount;
       return acc;
     }, stats);
 }
@@ -39,11 +39,24 @@ async function bootstrap() {
   const fileContents = await whenFileRead(resolve(__dirname, '../imported-data/all-26.11.2017-26.12.2017.csv'));
   const items = await whenCsvParsed(normalizeEOLs(fileContents));
   items
-    // .filter((_, idx) => idx <= 150 - 5)
     .filter(isFilledInLine)
     .map(toTransaction)
     .forEach(storage.add);
+  tagStorage(storage);
   return Promise.resolve();
+}
+
+function tagStorage(store: IItemsStorage<TTransaction>) {
+  store.filter()
+    .forEach(tagTransaction);
+}
+
+function tagTransaction(transaction: TTransaction) {
+  if (transaction.details.includes('205 - Безготівковий платіж."OLIVKA" KIEV')) {
+    transaction.tags.add('living');
+    transaction.tags.add('cafe');
+    transaction.tags.add('olivka');
+  }
 }
 
 function normalizeEOLs(fileContents: string) {
@@ -52,24 +65,6 @@ function normalizeEOLs(fileContents: string) {
 
 function isFilledInLine(line: string[]) {
   return line.length >= 8 && line[6] !== 'Сума у валюті рахунку';
-}
-
-function toTransaction(line: string[], index: number): Transaction {
-  const amount = parseFloat(line[6].replace(/\s/g, ''));
-  if (isNaN(amount)) {
-    throw new Error(`Amount is not a number: ${amount}. Line #${index}. Transaction: ${JSON.stringify(line)}`);
-  }
-  return [
-    line[0] || '',
-    line[1] || '',
-    line[2] || '',
-    line[3] || '',
-    line[4] || '',
-    parseFloat(line[5]),
-    amount,
-    parseFloat(line[7]),
-    line[8] || '',
-  ];
 }
 
 async function whenCsvParsed(fileContents: string) {
