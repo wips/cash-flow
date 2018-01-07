@@ -67,15 +67,13 @@ function isFilledInLine(line: string[]) {
   return line.length >= 8 && line[6] !== 'Сума у валюті рахунку';
 }
 
-async function whenCsvParsed(fileContents: string) {
+async function whenCsvParsed(contents: string) {
   const options = {
     relax_column_count: true,
     relax: true,
     skip_empty_lines: true,
   };
-  return new Promise<string[][]>((res, rej) => {
-    csvParse(fileContents, options, (err, pojo) => err ? rej(err) : res(pojo));
-  });
+  return new Promise<string[][]>((res, rej) => csvParse(contents, options, (err, arr) => err ? rej(err) : res(arr)));
 }
 
 async function whenFileRead(fileName: string) {
