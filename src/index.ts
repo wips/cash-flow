@@ -3,17 +3,19 @@ import * as fs from 'fs';
 import { resolve } from 'path';
 import storage from './data-source/transaction-storage';
 import { toTransaction } from './mappers/transaction';
+import getTags from './tagging/get-tags';
 
 const ENCODING = 'UTF-8';
-
-main()
-  .catch(console.error);
 
 async function main() {
   await bootstrap();
   console.log('Stats: ', gatherStats(storage.filter()));
-  console.log('Olivka: ', gatherStats(storage.filter(({ tags }) => tags.size > 0)));
+  ['olivka', 'living', 'cafe']
+    .forEach(tag => console.log(`${tag}:`, gatherStats(storage.filter(({ tags }) => tags.has(tag)))));
 }
+
+main()
+  .catch(console.error);
 
 function gatherStats(transactions: TTransaction[]) {
   const stats = {
@@ -52,11 +54,13 @@ function tagStorage(store: IItemsStorage<TTransaction>) {
 }
 
 function tagTransaction(transaction: TTransaction) {
-  if (transaction.details.includes('205 - Безготівковий платіж."OLIVKA" KIEV')) {
-    transaction.tags.add('living');
-    transaction.tags.add('cafe');
-    transaction.tags.add('olivka');
-  }
+  // if (transaction.details.includes('205 - Безготівковий платіж."OLIVKA" KIEV')) {
+  //   transaction.tags.add('living');
+  //   transaction.tags.add('cafe');
+  //   transaction.tags.add('olivka');
+  // }
+  getTags(transaction)
+    .forEach(tag => transaction.tags.add(tag));
 }
 
 function normalizeEOLs(fileContents: string) {

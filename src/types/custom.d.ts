@@ -21,17 +21,12 @@ interface IItemsStorage<T> {
   filter(cb?: (item: T) => boolean): T[];
 }
 
-//
-// interface IStrategyOptionsWithRequest {
-//     usernameField?: string;
-//     passwordField?: string;
-//     passReqToCallback: boolean;
-// }
-//
-// interface IVerifyOptions {
-//     message: string;
-// }
-//
-// interface VerifyFunction {
-//     (username: string, password: string, done: (error: any, user?: any, options?: IVerifyOptions) => void): void;
-// }
+interface IKeyValueStorage<T, U> {
+  add(key: T, item: U): void;
+  get(key: T): U;
+  keys(): T[];
+}
+
+type TTagMatcher = string
+  | RegExp
+  | ((transaction: TTransaction) => boolean);
