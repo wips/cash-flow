@@ -4,13 +4,15 @@ import { resolve } from 'path';
 import storage from './data-source/transaction-storage';
 import { toTransaction } from './mappers/transaction';
 import getTags from './tagging/get-tags';
+import tagMatchersConfig from './tagging/tag-matchers-config';
 
 const ENCODING = 'UTF-8';
 
 async function main() {
   await bootstrap();
   console.log('Stats: ', gatherStats(storage.filter()));
-  ['olivka', 'living', 'cafe']
+  Object.keys(tagMatchersConfig)
+    .sort()
     .forEach(tag => console.log(`${tag}:`, gatherStats(storage.filter(({ tags }) => tags.has(tag)))));
 }
 
